@@ -24,7 +24,9 @@ import { Label } from '../ui/label'
 
 const CountrySelectField = ({ name, control, error,label,required }:CountrySelectProps) => {
     const countriesOptions = useMemo(() => countryList().getData(), [])
+    const [open, setOpen] = useState(false)
     // console.log(countriesOptions);
+
     return (
 
         <div className='space-y-2'>
@@ -36,7 +38,7 @@ const CountrySelectField = ({ name, control, error,label,required }:CountrySelec
                 control={control}
                 rules={{ required: required ? `Please select ${label.toLowerCase()}` : false }}
                 render={({ field }) => {
-                    const [open, setOpen] = useState(false)
+                    
                     
                     return (
                         <Popover open={open} onOpenChange={setOpen}>
