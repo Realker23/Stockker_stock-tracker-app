@@ -10,6 +10,11 @@ const mongoose = require('mongoose');
 
 const MONGODB_URI = process.env.MONGODB_URI || '';
 
+/**
+ * Attempts to connect to MongoDB using the MONGODB_URI environment variable, reports connection details, performs a simple collection listing, and closes the connection.
+ *
+ * Logs a masked form of the connection URI and connection diagnostics; if MONGODB_URI is missing or the connection fails, the process exits with status 1. On completion (success or failure), the Mongoose connection is closed.
+ */
 async function testConnection() {
   console.log('🔍 Testing MongoDB connection...\n');
 
