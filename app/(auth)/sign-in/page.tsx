@@ -3,27 +3,36 @@
 import FooterLink from "@/components/forms/FooterLink"
 import InputField from "@/components/forms/InputField"
 import { Button } from "@/components/ui/button"
+import { signInWithEmail } from "@/lib/actions/auth.actions"
 import Link from "next/link"
+import { redirect, useRouter } from "next/navigation"
+
 import { Form, SubmitHandler, useForm } from "react-hook-form"
+import { toast } from "sonner"
 
 
 const SignIn = () => {
-
+  const router = useRouter();
   const {register, handleSubmit,control, formState: { errors, isSubmitting }} = useForm<SignInFormData>({defaultValues: {
-    email: "",
-    password: "",
-  },mode: "onBlur"
-}
+      email: "",
+      password: "",
+    },mode: "onBlur"
+  }
 
-  )
+  );
+  
+
 
   const onSubmit = async (data:SignInFormData) => {
     try {
-      // Simulate an async operation like an API call
-      // await new Promise((resolve) => setTimeout(resolve, 2000));
-      console.log("User logged in successfully:", data);
+      const response = await signInWithEmail(data);
+      if(response.success){
+        toast.success(response.message);
+        router.push("/");// Redirect to homepage or dashboard after successful sign-in
+      }
     } catch (error) {
       console.error("Error logging in:", error);
+      toast.error("An unexpected error occurred. Please try again.");
     }
   }
 

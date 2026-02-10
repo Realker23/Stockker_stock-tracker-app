@@ -59,7 +59,8 @@ async function testConnection() {
       console.log('\n💡 Tip: Check your IP whitelist in MongoDB Atlas settings.');
     }
     
-    process.exit(1);
+    // process.exit(1); //will terminate immediately
+    process.exitCode = 1;
   } finally {
     // Close the connection
     await mongoose.connection.close();
