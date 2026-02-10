@@ -5,9 +5,14 @@ import FooterLink from "@/components/forms/FooterLink";
 import InputField from "@/components/forms/InputField";
 import SelectField from "@/components/forms/SelectField";
 import { Button } from "@/components/ui/button";
+import { signUpWithEmail } from "@/lib/actions/auth.actions";
 import { INVESTMENT_GOALS, PREFERRED_INDUSTRIES, RISK_TOLERANCE_OPTIONS } from "@/lib/constants";
+import { useRouter } from "next/navigation";
 import { SubmitHandler, useForm } from "react-hook-form";
+import { toast } from "sonner"
+
 const SignUp = () => {
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -28,11 +33,22 @@ const SignUp = () => {
 
   const onSubmit = async (data: SignUpFormData) => {
     try {
-      // Simulate an async operation like an API call
-      // await new Promise((resolve) => setTimeout(resolve, 2000));
-      console.log("User signed up successfully:", data);
+
+      // console.log("User signed up successfully:", data);
+      //signUpWithEmail
+      const response = await signUpWithEmail(data);
+      if(response.success){
+        // console.log(response.message);
+        toast.success(response.message);
+        router.push("/");// Redirect to homepage or dashboard after successful sign-up
+      } else {
+        console.error("Sign-up failed:", response);
+        toast.error(response.message || "Sign-up failed. Please try again.");
+      }
+
     } catch (error) {
       console.error("Error signing up:", error);
+      toast.error("An unexpected error occurred. Please try again.");
     }
   };
 
