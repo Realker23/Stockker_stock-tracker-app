@@ -217,5 +217,5 @@ export const sendDailyNewsSummary = inngest.createFunction(
         });
 
         return { success: true, message: 'Daily news summaries sent successfully' };
-    },
-)
+    }
+);
