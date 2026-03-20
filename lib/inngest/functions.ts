@@ -160,7 +160,18 @@ export const sendDailyNewsSummary = inngest.createFunction(
 
         // ── Step 3: Summarise each user's news via AI (placeholder) ──────────
         // TODO: call step.ai.infer with NEWS_SUMMARY_EMAIL_PROMPT for each user
-        const userNewsSummaries: {user: User; newsContent: string|null}[] = [];
+        const userNewsSummaries: {user: User; newsContent: string|null}[] = await step.run('summarise-all-news', async () => {
+            const summaries: {user: User; newsContent: string|null}[] = [];
+
+            for(const {user, news} of userNewsData){
+                summaries.push({user, newsContent: null});
+            }
+
+            return summaries;
+        });
+
+        // Run AI inference as individual steps per user
+        const finalSummaries: {user: User; newsContent: string|null}[] = [];
 
         for(const {user, news} of userNewsData){
             try{
@@ -168,27 +179,25 @@ export const sendDailyNewsSummary = inngest.createFunction(
                 const response = await step.ai.infer(`summarise-news-for-${user.id}`,{
                     model: step.ai.models.gemini({model:'gemini-2.5-flash-lite'}),
                     body:{
-
                         contents:[
                             {
                                 role:'user', parts:[{text: prompt}]
                             }
                         ]
                     }
-                })
+                });
                 const part = response.candidates?.[0]?.content?.parts?.[0];
                 const newsContent = ((part && 'text' in part) ? part.text : null) || "No Market News Available Today.";
-                userNewsSummaries.push({user, newsContent});
-
+                finalSummaries.push({user, newsContent});
             }catch(e){
                 console.error(`Failed to summarise news for user [${user.id}]:`, e);
-                userNewsSummaries.push({user, newsContent: null});
+                finalSummaries.push({user, newsContent: null});
             }
         }
 
         // ── Step 4: Send the personalised email to each user ────────────────
         await step.run('send-news-emails', async () => {
-            for (const { user, newsContent } of userNewsSummaries) {
+            for (const { user, newsContent } of finalSummaries) {
                 if (!newsContent) {
                     console.warn(`Skipping email for user [${user.id}] – no news content.`);
                     continue;
