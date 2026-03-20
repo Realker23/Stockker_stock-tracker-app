@@ -20,10 +20,10 @@ const UserDropdown = ({ user }: { user: User }) => {
 
     const router = useRouter();
 
-    const handleSignOut = () => {
+    const handleSignOut = async () => {
         // Perform sign-out logic here (e.g., clear auth tokens, update state)
         // After sign-out, redirect to the home page
-        signOut();
+        await signOut();
         router.push('/sign-in');
     }
 

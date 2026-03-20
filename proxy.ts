@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
+
+//needs to be at root level to protect all routes - checks for session cookie and redirects to sign-in if not found
 export async function proxy(request: NextRequest) {
 	const sessionCookie = getSessionCookie(request);
 
@@ -32,6 +34,3 @@ export async function proxy(request: NextRequest) {
 export const config = {
 	matcher: ['/((?!api|_next/static|_next/image|favicon.ico|sign-in|sign-up|assets).*)'], // Specify the routes the middleware applies to
 };
-
-
-

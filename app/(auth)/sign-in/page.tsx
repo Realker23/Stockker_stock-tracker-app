@@ -29,6 +29,8 @@ const SignIn = () => {
       if(response.success){
         toast.success(response.message);
         router.push("/");// Redirect to homepage or dashboard after successful sign-in
+      } else {
+        toast.error(response.message);
       }
     } catch (error) {
       console.error("Error logging in:", error);

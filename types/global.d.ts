@@ -67,6 +67,12 @@ declare global {
         intro: string;
     };
 
+    type NewsSummaryEmailData = {
+        email: string;
+        name: string;
+        newsContent: string;
+    };
+
     type User = {
         id: string;
         name: string;

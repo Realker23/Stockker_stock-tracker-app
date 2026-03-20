@@ -31,17 +31,23 @@ import { inngest } from "../inngest/client";
  */
 export const signUpWithEmail = async (formData: SignUpFormData) => {
     // Here you would typically send the formData to your backend API to create a new user
+    let response;
+    
     try{
-        
-        const response = await auth.api.signUpEmail({
+        response = await auth.api.signUpEmail({
             body:{
                 email: formData.email,
                 password: formData.password,
                 name: formData.fullName,
             }
         })
+    }catch(error){
+         return {success: false, message: "User sign-up failed", data: null}
+    }
 
-        if(response){
+    // Send event to Inngest in a separate try/catch so failures don't affect signup success
+    if(response){
+        try{
             await inngest.send({
                 name: "app/user.created",
                 data: {
@@ -53,15 +59,13 @@ export const signUpWithEmail = async (formData: SignUpFormData) => {
                     preferredIndustry: formData.preferredIndustry,
                 }
             })
+        }catch(eventError){
+            console.error("Failed to send user.created event to Inngest:", eventError);
+            // Continue - don't fail the signup if event dispatch fails
         }
-
-        return {success: true, message: "User signed up successfully", data: response}
-
-
-
-    }catch(error){
-         return {success: false, message: "User sign-up failed", data: null}
     }
+
+    return {success: true, message: "User signed up successfully", data: response}
 
 }
 

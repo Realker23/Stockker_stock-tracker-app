@@ -1,7 +1,9 @@
-import { success } from "better-auth";
 import { inngest } from "./client";
-import { PERSONALIZED_WELCOME_EMAIL_PROMPT } from "./prompts";
-import { sendWelcomeEmail } from "../nodemailer";
+import { PERSONALIZED_WELCOME_EMAIL_PROMPT, NEWS_SUMMARY_EMAIL_PROMPT } from "./prompts";
+import { sendWelcomeEmail, sendNewsSummaryEmail } from "../nodemailer";
+import { getAllUsersForNewsEmail } from "../actions/user.action";
+import { getWatchlistSymbolsByEmail } from "../actions/watchlist.actions";
+import { getNews } from "../actions/finnhub.actions";
 
 /**
  * Sends a sign-up email to a newly created user by handling the
@@ -83,14 +85,13 @@ export const sendSignUpEmail = inngest.createFunction(
         await step.run('send-welcome-email',async ()=>{
             // Here you would integrate with your email service provider (like SendGrid, Mailgun, etc.) to send the email
             // using the generated response from the AI as the email content
-            console.log("Email content:", response.candidates?.[0]?.content?.parts?.[0]);
+
             const part = response.candidates?.[0]?.content?.parts?.[0];
             const introText = (part && 'text' in part) ? part.text : "Thanks for joining Stockker!. You now have the tools to track markets and make informed investment decisions. We're excited to have you on board!";
             
             // EMAIL SENDING LOGIC GOES HERE
             const {data: {email, name}} = event;
             
-            console.log("Sending email to:", email, "Name:", name);
             
             return await sendWelcomeEmail({email, name, intro: introText})
             
@@ -103,4 +104,109 @@ export const sendSignUpEmail = inngest.createFunction(
         }
 
     }
+)
+
+// Calculate 5 minutes from now
+const now = new Date();
+now.setMinutes(now.getMinutes() + 5);
+const minute = now.getUTCMinutes();
+const hour = now.getUTCHours();
+
+export const sendDailyNewsSummary = inngest.createFunction(
+    { id: 'daily-news-summary' },
+    [
+        { event: 'app/send.daily.news' },
+        { cron: '0 12 * * *' }, // Every day at 12:00 PM UTC
+    ],
+    async ({ step }) => {
+
+        // ── Step 1: Fetch every user that should receive a news email ────────
+        const users = await step.run('get-all-users', getAllUsersForNewsEmail);
+
+        if (!users || users.length === 0) {
+            console.log('No users found for news email');
+            return { success: false, message: 'No users to send news summary to' };
+        }
+
+        // ── Step 2: Resolve each user's watchlist and fetch personalised news ─
+        type UserWithNews = {
+            user: { id: string; email: string; name: string; country: string };
+            news: MarketNewsArticle[];
+        };
+
+        const userNewsData = await step.run('fetch-user-news', async (): Promise<UserWithNews[]> => {
+            const results: UserWithNews[] = [];
+
+            for (const user of users) {
+                // Get the symbols the user is watching (empty array = no watchlist)
+                const symbols = await getWatchlistSymbolsByEmail(user.email);
+
+                // Fetch symbol news; fall back to general market news when the
+                // watchlist is empty or all symbol fetches return nothing
+                let news: MarketNewsArticle[] = [];
+                try {
+                    news = await getNews(symbols.length > 0 ? symbols : undefined);
+                } catch {
+                    // Degrade gracefully – send email without news rather than
+                    // blocking the entire batch
+                    console.error(`Failed to fetch news for ${user.email}`);
+                }
+
+                results.push({ user, news });
+            }
+
+            return results;
+        });
+
+        // ── Step 3: Summarise each user's news via AI (placeholder) ──────────
+        // TODO: call step.ai.infer with NEWS_SUMMARY_EMAIL_PROMPT for each user
+        const userNewsSummaries: {user: User; newsContent: string|null}[] = [];
+
+        for(const {user, news} of userNewsData){
+            try{
+                const prompt = NEWS_SUMMARY_EMAIL_PROMPT.replace("{{newsData}}", JSON.stringify(news, null, 2));
+                const response = await step.ai.infer(`summarise-news-for-${user.email}`,{
+                    model: step.ai.models.gemini({model:'gemini-2.5-flash-lite'}),
+                    body:{
+
+                        contents:[
+                            {
+                                role:'user', parts:[{text: prompt}]
+                            }
+                        ]
+                    }
+                })
+                const part = response.candidates?.[0]?.content?.parts?.[0];
+                const newsContent = ((part && 'text' in part) ? part.text : null) || "No Market News Available Today.";
+                userNewsSummaries.push({user, newsContent});
+
+            }catch(e){
+                console.error(`Failed to summarise news for ${user.email}:`, e);
+                userNewsSummaries.push({user, newsContent: null});
+            }
+        }
+
+        // ── Step 4: Send the personalised email to each user ────────────────
+        await step.run('send-news-emails', async () => {
+            for (const { user, newsContent } of userNewsSummaries) {
+                if (!newsContent) {
+                    console.warn(`Skipping email for ${user.email} – no news content.`);
+                    continue;
+                }
+                try {
+                    await sendNewsSummaryEmail({
+                        email: user.email,
+                        name: user.name,
+                        newsContent,
+                    });
+                } catch (error) {
+                    console.error('Failed to send news summary email', { userId: user.id, error });
+                }
+            }
+        });
+            }
+        });
+
+        return { success: true, message: 'Daily news summaries sent successfully' };
+    },
 )
