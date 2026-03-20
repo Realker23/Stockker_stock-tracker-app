@@ -98,14 +98,15 @@ export const formatArticle = (
 });
 
 export const formatChangePercent = (changePercent?: number) => {
-  if (!changePercent) return '';
+  if (changePercent == null) return '';
   const sign = changePercent > 0 ? '+' : '';
   return `${sign}${changePercent.toFixed(2)}%`;
 };
 
 export const getChangeColorClass = (changePercent?: number) => {
-  if (!changePercent) return 'text-gray-400';
+  if (changePercent == null || changePercent === 0) return 'text-gray-400';
   return changePercent > 0 ? 'text-green-500' : 'text-red-500';
+};
 };
 
 export const formatPrice = (price: number) => {
