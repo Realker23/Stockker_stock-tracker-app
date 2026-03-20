@@ -173,17 +173,6 @@ declare global {
     type WatchlistNewsProps = {
         news?: MarketNewsArticle[];
     };
-
-    type SearchCommandProps = {
-        open?: boolean;
-        setOpen?: (open: boolean) => void;
-        renderAs?: 'button' | 'text';
-        buttonLabel?: string;
-        buttonVariant?: 'primary' | 'secondary';
-        className?: string;
-        initialStocks: StockWithWatchlistStatus[];
-    };
-
     type AlertData = {
         symbol: string;
         company: string;

@@ -8,7 +8,7 @@ import { searchStocks } from '@/lib/actions/finnhub.actions'
 const Header = async ({ user }: { user: User }) => {
     const initialStocks = await searchStocks(""); // Fetch initial stocks to pass to SearchCommand; adjust as needed for your use case
   return (
-    <header className="sticky top-0  bg-gray-700">
+    <header className="sticky top-0  bg-gray-700 position-relative z-50">
         <div className="container header-wrapper">
             <Link href='/'>
                 <Image src="/assets/icons/logo.png" alt="Logo" width={140} height={32} className='h-8 w-auto cursor-pointer'/>

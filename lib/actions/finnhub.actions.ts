@@ -8,6 +8,7 @@ import {
 } from '@/lib/utils';
 import { cache } from 'react';
 import { POPULAR_STOCK_SYMBOLS } from '../constants';
+import { getWatchlistBySymbol, getWatchlistStatus } from './watchlist.actions';
 
 const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1';
 const NEXT_PUBLIC_FINNHUB_API_KEY = process.env.NEXT_PUBLIC_FINNHUB_API_KEY ?? '';
@@ -174,24 +175,33 @@ export const searchStocks = cache(async (query?: string): Promise<StockWithWatch
       results = Array.isArray(data?.result) ? data.result : [];
     }
 
-    const mapped: StockWithWatchlistStatus[] = results
-      .map((r) => {
+    const mapped: StockWithWatchlistStatus[] = await Promise.all(results
+      .map(async (r) => {
         const upper = (r.symbol || '').toUpperCase();
         const name = r.description || upper;
         const exchangeFromDisplay = (r.displaySymbol as string | undefined) || undefined;
         const exchangeFromProfile = (r as any).__exchange as string | undefined;
         const exchange = exchangeFromDisplay || exchangeFromProfile || 'US';
         const type = r.type || 'Stock';
+        let isInWatchlist = false;
+        try {
+          const watchlist = await getWatchlistBySymbol(r.symbol);
+          isInWatchlist = watchlist !== null;
+        } catch (e) {
+          console.error('Error fetching watchlist status for', upper, e);
+        }
+
         const item: StockWithWatchlistStatus = {
           symbol: upper,
           name,
           exchange,
           type,
-          isInWatchlist: false,
+          isInWatchlist,
         };
         return item;
       })
-      .slice(0, 15);
+      .slice(0, 15)
+    );
 
     return mapped;
   } catch (err) {
