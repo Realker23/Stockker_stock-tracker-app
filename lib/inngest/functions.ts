@@ -149,7 +149,7 @@ export const sendDailyNewsSummary = inngest.createFunction(
                 } catch {
                     // Degrade gracefully – send email without news rather than
                     // blocking the entire batch
-                    console.error(`Failed to fetch news for ${user.email}`);
+                    console.error(`Failed to fetch news for user [${user.id}]`);
                 }
 
                 results.push({ user, news });
@@ -165,7 +165,7 @@ export const sendDailyNewsSummary = inngest.createFunction(
         for(const {user, news} of userNewsData){
             try{
                 const prompt = NEWS_SUMMARY_EMAIL_PROMPT.replace("{{newsData}}", JSON.stringify(news, null, 2));
-                const response = await step.ai.infer(`summarise-news-for-${user.email}`,{
+                const response = await step.ai.infer(`summarise-news-for-${user.id}`,{
                     model: step.ai.models.gemini({model:'gemini-2.5-flash-lite'}),
                     body:{
 
@@ -181,7 +181,7 @@ export const sendDailyNewsSummary = inngest.createFunction(
                 userNewsSummaries.push({user, newsContent});
 
             }catch(e){
-                console.error(`Failed to summarise news for ${user.email}:`, e);
+                console.error(`Failed to summarise news for user [${user.id}]:`, e);
                 userNewsSummaries.push({user, newsContent: null});
             }
         }
@@ -190,7 +190,7 @@ export const sendDailyNewsSummary = inngest.createFunction(
         await step.run('send-news-emails', async () => {
             for (const { user, newsContent } of userNewsSummaries) {
                 if (!newsContent) {
-                    console.warn(`Skipping email for ${user.email} – no news content.`);
+                    console.warn(`Skipping email for user [${user.id}] – no news content.`);
                     continue;
                 }
                 try {

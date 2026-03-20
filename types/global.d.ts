@@ -181,6 +181,7 @@ declare global {
         buttonLabel?: string;
         buttonVariant?: 'primary' | 'secondary';
         className?: string;
+        initialStocks: StockWithWatchlistStatus[];
     };
 
     type AlertData = {
