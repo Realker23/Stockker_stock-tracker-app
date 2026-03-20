@@ -73,4 +73,11 @@ export const getAuth = async() => {
 
 
 
-export const auth = await getAuth();
+export const auth = {
+    api: {
+        signUpEmail: async (opts: any) => (await getAuth()).api.signUpEmail(opts),
+        signInEmail: async (opts: any) => (await getAuth()).api.signInEmail(opts),
+        signOut: async (opts: any) => (await getAuth()).api.signOut(opts),
+        getSession: async (opts: any) => (await getAuth()).api.getSession(opts),
+    }
+} as unknown as Awaited<ReturnType<typeof getAuth>>;
