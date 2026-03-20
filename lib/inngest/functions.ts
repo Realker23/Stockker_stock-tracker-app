@@ -193,11 +193,17 @@ export const sendDailyNewsSummary = inngest.createFunction(
                     console.warn(`Skipping email for ${user.email} – no news content.`);
                     continue;
                 }
-                await sendNewsSummaryEmail({
-                    email: user.email,
-                    name: user.name,
-                    newsContent,
-                });
+                try {
+                    await sendNewsSummaryEmail({
+                        email: user.email,
+                        name: user.name,
+                        newsContent,
+                    });
+                } catch (error) {
+                    console.error('Failed to send news summary email', { userId: user.id, error });
+                }
+            }
+        });
             }
         });
 
