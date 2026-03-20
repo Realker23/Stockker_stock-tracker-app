@@ -11,10 +11,10 @@ import { POPULAR_STOCK_SYMBOLS } from '../constants';
 import { getWatchlistBySymbol, getWatchlistStatus } from './watchlist.actions';
 
 const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1';
-const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY;
+const NEXT_PUBLIC_FINNHUB_API_KEY = process.env.NEXT_PUBLIC_FINNHUB_API_KEY;
 
-if (!FINNHUB_API_KEY) {
-    throw new Error('FINNHUB_API_KEY is not configured');
+if (!NEXT_PUBLIC_FINNHUB_API_KEY) {
+    throw new Error('NEXT_PUBLIC_FINNHUB_API_KEY is not configured');
 }
 
 // ---------------------------------------------------------------------------
@@ -126,7 +126,7 @@ export const getNews = async (symbols?: string[]): Promise<MarketNewsArticle[]> 
 
 export const searchStocks = cache(async (query?: string): Promise<StockWithWatchlistStatus[]> => {
   try {
-    const token = process.env.FINNHUB_API_KEY ?? NEXT_PUBLIC_FINNHUB_API_KEY;
+    const token = process.env.NEXT_PUBLIC_FINNHUB_API_KEY ?? NEXT_PUBLIC_FINNHUB_API_KEY;
     if (!token) {
       // If no token, log and return empty to avoid throwing per requirements
       console.error('Error in stock search:', new Error('FINNHUB API key is not configured'));
